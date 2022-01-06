@@ -90,17 +90,23 @@ int yed_plugin_boot(yed_plugin *self){
 void copy_to_universal_clipboard(int argc, char **argv){
     char * selection;
     char * base64;
+#if YED_VERSION < 1400
     char * out_buffer;
+#endif
     yed_buffer *buffer = ys->active_frame!=NULL?ys->active_frame->buffer:NULL;
     if(buffer !=NULL && buffer->has_selection){
         selection = yed_get_selection_text(buffer);
         if(selection != NULL && strcmp(selection,"")!=0){
             base64 = b64_encode(selection,strlen(selection));
+#if YED_VERSION < 1400
             out_buffer = malloc(strlen(base64)+20);
             snprintf(out_buffer,strlen(base64)+20,"\033]52;c;%s\a",base64);
             append_to_output_buff(out_buffer);
-            yed_cprint("Copied to system clipboard");
             free(out_buffer);
+#else
+            printf("\033]52;c;%s\a",base64);
+#endif
+            yed_cprint("Copied to system clipboard");
             free(selection);
             free(base64);
         }
