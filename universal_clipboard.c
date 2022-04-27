@@ -56,6 +56,7 @@ char *b64_encode(const char *in, size_t len)
 
 int yed_plugin_boot(yed_plugin *self){
     char * copy_on_yank;
+    char * trim_nl;
     yed_event_handler variable_change_event;
 
     YED_PLUG_VERSION_CHECK();
@@ -83,6 +84,10 @@ int yed_plugin_boot(yed_plugin *self){
         universal_copy_on_yank_state=0;
     }
 
+    if((trim_nl=yed_get_var("universal-clipboard-trim-nl"))==NULL){
+        yed_set_var("universal-clipboard-trim-nl","NO");
+    }
+
     return 0;
 }
 
@@ -90,6 +95,7 @@ int yed_plugin_boot(yed_plugin *self){
 void copy_to_universal_clipboard(int argc, char **argv){
     char * selection;
     char * base64;
+    int length;
 #if YED_VERSION < 1400
     char * out_buffer;
 #endif
@@ -97,7 +103,8 @@ void copy_to_universal_clipboard(int argc, char **argv){
     if(buffer !=NULL && buffer->has_selection){
         selection = yed_get_selection_text(buffer);
         if(selection != NULL && strcmp(selection,"")!=0){
-            base64 = b64_encode(selection,strlen(selection));
+            length = strlen(selection);
+            base64 = b64_encode(selection,length-((selection[length-1]=='\n'&&yed_var_is_truthy("universal-clipboard-trim-nl"))?1:0));
 #if YED_VERSION < 1400
             out_buffer = malloc(strlen(base64)+20);
             snprintf(out_buffer,strlen(base64)+20,"\033]52;c;%s\a",base64);
